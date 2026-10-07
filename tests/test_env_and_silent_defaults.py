@@ -147,8 +147,17 @@ def test_base_model_override_keeps_tier_settings(monkeypatch):
     """Students may pick their own base model; the tier's hardware settings stay."""
     from labkit.config import get_tier
     monkeypatch.setenv("BASE_MODEL", "Qwen/Qwen3.5-2B")
+    monkeypatch.delenv("MAX_LENGTH", raising=False)
     t = get_tier("T4")
     assert t.model_id == "Qwen/Qwen3.5-2B"
     assert (t.max_length, t.per_device_batch, t.grad_accum) == (1024, 1, 16)
     monkeypatch.delenv("BASE_MODEL")
     assert get_tier("T4").model_id == "unsloth/Qwen3.5-4B"
+
+
+def test_max_length_override_keeps_the_rest_of_the_tier(monkeypatch):
+    """NB1 measures max_length from p95; overriding it must not change the train budget."""
+    from labkit.config import get_tier
+    monkeypatch.setenv("MAX_LENGTH", "256")
+    t = get_tier("T4")
+    assert (t.max_length, t.per_device_batch, t.grad_accum) == (256, 1, 16)

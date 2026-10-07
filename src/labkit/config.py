@@ -88,7 +88,18 @@ def get_tier(name: str | None = None) -> Tier:
         )
     tier = TIERS[key]
     override = os.environ.get("BASE_MODEL", "").strip()
-    return replace(tier, model_id=override) if override else tier
+    if override:
+        tier = replace(tier, model_id=override)
+    max_length = os.environ.get("MAX_LENGTH", "").strip()
+    if max_length:
+        try:
+            parsed = int(max_length)
+        except ValueError as exc:
+            raise ValueError(f"MAX_LENGTH must be an integer, got {max_length!r}") from exc
+        if parsed <= 0:
+            raise ValueError(f"MAX_LENGTH must be positive, got {parsed}")
+        tier = replace(tier, max_length=parsed)
+    return tier
 
 
 # --- Training configuration -------------------------------------------------
